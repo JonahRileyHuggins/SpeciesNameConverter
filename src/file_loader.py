@@ -8,10 +8,8 @@ description: loads a file.
 """
 
 import os
-import json
 from types import SimpleNamespace
 
-import yaml
 import pandas as pd
 
 
@@ -130,6 +128,7 @@ class YAML(File):
         """Load yaml file"""
         try:
             with open(self.file_path, encoding='utf-8', mode='r') as file:
+                import yaml
                 config = yaml.safe_load(file)
                 return DotDict(config)
         except FileNotFoundError:
@@ -147,6 +146,7 @@ class JSON(File):
     def loader(self):
         """Load JSON file"""
         try:
+            import json
             with open(self.file_path, encoding='utf-8', mode='r') as file:
                 config = json.load(file)
                 return DotDict(config)
