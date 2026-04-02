@@ -1,0 +1,13 @@
+swap_files:
+  old: 
+    filename: "swap-reference.tsv" # The primary reference file(s)
+    column: "old"
+    datatype: "string"
+  new: 
+    filename: "swap-reference.tsv" # The primary reference file(s)
+    column: "new"
+    datatype: "string"
+  update:
+    - file1:
+      filename: "SPARCED - Ratelaws.tsv"  # List of files to be swapped in place of reference
+      output: "SPARCED-Ratelaws-updated.tsv"
