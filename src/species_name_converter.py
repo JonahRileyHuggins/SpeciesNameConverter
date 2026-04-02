@@ -72,7 +72,7 @@ def convert(config_path: os.PathLike, verbose = False, **kwargs) -> None:
             config_base,
             files_to_update[index]['output']
         )
-        updated.to_csv(output_path, **kwargs)
+        updated.to_csv(output_path, sep="\t", index=False, **kwargs)
         logger.info("Saved updated file to: %s", output_path)
 
 
