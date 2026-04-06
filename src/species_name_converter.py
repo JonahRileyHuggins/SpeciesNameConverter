@@ -49,16 +49,15 @@ def convert(config_path: os.PathLike, verbose = False, **kwargs) -> None:
 
 
     files_to_update = loader.config.get("swap_files", {}).get("update", {})
-    file_paths = [file_key["filename"] for file_key in files_to_update]
-
-
+    file_paths = [files_to_update[key]["filename"] for key in list(files_to_update.keys())]
     logger.info("Found %d files to update", len(file_paths))
 
 
-    for index, file in enumerate(file_paths):
+    for index, file in enumerate(list(files_to_update.keys())):
+        file_path = files_to_update[file]["filename"]
         logger.info("Processing file [%d/%d]: %s", index + 1, len(file_paths), file)
 
-        update_path = os.path.join(config_base, file)
+        update_path = os.path.join(config_base, file_path)
 
         update_me = Config.file_loader(update_path, **kwargs)
         logger.debug("Loaded file successfully: %s", file)
@@ -70,9 +69,9 @@ def convert(config_path: os.PathLike, verbose = False, **kwargs) -> None:
 
         output_path = os.path.join(
             config_base,
-            files_to_update[index]['output']
+            files_to_update[file]['output']
         )
-        updated.to_csv(output_path, sep="\t", index=False, **kwargs)
+        updated.to_csv(output_path, sep="\t", index=False)
         logger.info("Saved updated file to: %s", output_path)
 
 

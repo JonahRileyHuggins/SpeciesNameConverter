@@ -1,13 +1,21 @@
 swap_files:
   old: 
-    filename: "swap-reference.tsv" # The primary reference file(s)
+    filename: "isoform-swap.tsv" # The primary reference file(s)
     column: "old"
     datatype: "string"
-  new: 
-    filename: "swap-reference.tsv" # The primary reference file(s)
+  new:
+    filename: "isoform-swap.tsv" # The primary reference file(s)
     column: "new"
     datatype: "string"
   update:
-    - file1:
-      filename: "SPARCED - Ratelaws.tsv"  # List of files to be swapped in place of reference
-      output: "SPARCED-Ratelaws-updated.tsv"
+      file1:
+        filename: "SPARCED-Ratelaws.tsv"  # List of files to be swapped in place of reference
+        output: "SPARCED-Ratelaws-updated22.tsv"
+      file2:
+        filename: "SPARCED-Annotations.tsv"
+        output: "SPARCED-Annotations.tsv"
+  inspect: 
+      file1: "SPARCED-Species.tsv"
+      file2: "SPARCED-Ratelaws.tsv"
+      file3: "SPARCED-Parameters.tsv"
+      file4: "SPARCED-Annotations.tsv"
