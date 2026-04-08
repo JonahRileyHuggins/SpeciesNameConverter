@@ -59,9 +59,11 @@ def convert(config_path: os.PathLike, verbose = False, **kwargs) -> None:
 
         update_path = os.path.join(config_base, file_path)
 
-        update_me = Config.file_loader(update_path, **kwargs)
+        # We need to ensure column headers are replaced if they match the string as well
+        update_me = Config.file_loader(update_path, header=None, **kwargs)
+        
         logger.debug("Loaded file successfully: %s", file)
-
+        
 
         updated = update_me.map(lambda cell: replace_names(cell, name_map))
         logger.debug("Replaced species names in file: %s", file)
@@ -71,7 +73,7 @@ def convert(config_path: os.PathLike, verbose = False, **kwargs) -> None:
             config_base,
             files_to_update[file]['output']
         )
-        updated.to_csv(output_path, sep="\t", index=False)
+        updated.to_csv(output_path, sep="\t", index=False, header=False)
         logger.info("Saved updated file to: %s", output_path)
 
 
