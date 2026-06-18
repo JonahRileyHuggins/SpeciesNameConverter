@@ -1,0 +1,40 @@
+{
+  "base_dir": ".",
+  "swap_reference": {
+    "file": "swap-reference.tsv",
+    "old_column": "old",
+    "new_column": "new"
+  },
+  "protected_paths": [
+    "swap-reference.tsv",
+    "SPARCEDv1-files"
+  ],
+  "outputs": [
+    {
+      "input": "SPARCEDv1-files/Ratelaws.txt",
+      "output": "output/Ratelaws-updated.txt",
+      "format": "text"
+    },
+    {
+      "input": "SPARCEDv1-files/Species.txt",
+      "output": "output/Species-updated.txt"
+    },
+    {
+      "input": "SPARCEDv1-files/GeneReg.txt",
+      "output": "output/GeneReg-updated.txt",
+      "format": "text"
+    }
+  ],
+  "verify": {
+    "enabled": false
+  },
+  "load_kwargs": {
+    "sep": "\t",
+    "dtype": "str",
+    "keep_default_na": false
+  },
+  "save_kwargs": {
+    "sep": "\t",
+    "index": false
+  }
+}

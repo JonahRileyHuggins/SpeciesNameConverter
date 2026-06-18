@@ -10,8 +10,7 @@ Description: shared-utility functions for Experiments class.
 """
 # -----------------------Package Import & Defined Arguements-------------------#
 
-@staticmethod 
-def parse_kwargs(arg_list: list)-> dict:
+def parse_kwargs(arg_list: list) -> dict:
     """Parses catchall function."""
 
 

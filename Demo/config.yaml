@@ -1,21 +1,41 @@
-swap_files:
-  old: 
-    filename: "isoform-swap.tsv" # The primary reference file(s)
-    column: "old"
-    datatype: "string"
-  new:
-    filename: "isoform-swap.tsv" # The primary reference file(s)
-    column: "new"
-    datatype: "string"
-  update:
-      file1:
-        filename: "SPARCED-Ratelaws.tsv"  # List of files to be swapped in place of reference
-        output: "SPARCED-Ratelaws-updated22.tsv"
-      file2:
-        filename: "SPARCED-Annotations.tsv"
-        output: "SPARCED-Annotations.tsv"
-  inspect: 
-      file1: "SPARCED-Species.tsv"
-      file2: "SPARCED-Ratelaws.tsv"
-      file3: "SPARCED-Parameters.tsv"
-      file4: "SPARCED-Annotations.tsv"
+# Species name converter demo configuration
+#
+# Source files in SPARCEDv1-files/ and swap-reference.tsv are read-only.
+# All converted output is written to output/.
+
+base_dir: "."
+
+swap_reference:
+  file: "swap-reference.tsv"
+  old_column: "old"
+  new_column: "new"
+
+protected_paths:
+  - "swap-reference.tsv"
+  - "SPARCEDv1-files"
+
+outputs:
+  - input: "SPARCEDv1-files/Ratelaws.txt"
+    output: "output/Ratelaws-updated.txt"
+    format: text
+  - input: "SPARCEDv1-files/Species.txt"
+    output: "output/Species-updated.txt"
+  - input: "SPARCEDv1-files/GeneReg.txt"
+    output: "output/GeneReg-updated.txt"
+    format: text
+
+verify:
+  enabled: false
+  # When enabled, compare unique identifiers in outputs against a reference list:
+  # standard_file: "SPARCEDv1-files/Species.txt"
+  # standard_column: "species"
+  # detail_output: "output/discrepancies.tsv"
+
+load_kwargs:
+  sep: "\t"
+  dtype: str
+  keep_default_na: false
+
+save_kwargs:
+  sep: "\t"
+  index: false

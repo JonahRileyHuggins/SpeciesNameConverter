@@ -1,6 +1,10 @@
 # Python
 __pycache__/
 
+# Generated demo outputs (source files in SPARCEDv1-files/ stay read-only)
+Demo/output/*
+!Demo/output/.gitkeep
+
 # Vim
 *.swp
 *.un~

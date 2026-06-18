@@ -1,0 +1,14 @@
++--------------------------------------------------+
+| String Harmonization Summary                     |
++--------------------------------------------------+
+| Target entries processed     : 12,438            |
+| Entries renamed             : 1,972 (15.9%)      |
+| Entries unchanged           : 10,466             |
+| Failed / unmapped renames   : 84                 |
+| Naming collisions detected  : 6                  |
+| Standard unique strings     : 910                |
+| Target unique strings       : 927                |
+| Shared overlap              : 823 (90.4% std)    |
+| Standard-only / Target-only : 87 / 104           |
+| Detail files                : discrepancies.tsv  |
++--------------------------------------------------+

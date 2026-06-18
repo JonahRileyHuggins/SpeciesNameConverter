@@ -1,18 +1,12 @@
 # Species Name Converter
 
-A small utility for replacing species names (or other string identifiers) across one or more tabular files using a reference mapping.
+A utility for replacing string identifiers (typically species names) across one or more tabular files using an index-aligned swap reference table.
 
-The script reads:
-
-* an **"old"** column containing names to find
-* a **"new"** column containing names to replace them with
-* one or more **target files** to update
-
-Each occurrence of an entry in the `old` column is replaced with the corresponding entry at the same row index in the `new` column.
+Each row in the swap table defines one replacement: the value in the `old` column is replaced with the value at the same row index in the `new` column.
 
 ## What it does
 
-If your reference file contains:
+If your swap reference contains:
 
 | old | new    |
 | --- | ------ |
@@ -20,7 +14,7 @@ If your reference file contains:
 | AKT | AKT1   |
 | MEK | MAP2K1 |
 
-and your update file contains:
+and your target file contains:
 
 ```text
 ERK + AKT -> MEK
@@ -32,56 +26,42 @@ the output becomes:
 MAPK1 + AKT1 -> MAP2K1
 ```
 
-## Important assumptions
+The tool also protects:
 
-This script assumes:
-
-1. **The `old` and `new` columns are row-aligned**
-
-   * The first value in `old` maps to the first value in `new`
-   * The second value in `old` maps to the second value in `new`
-   * and so on
-
-2. **Input files are structured tabular files**
-
-   * Typically `.tsv` or `.csv`
-
-3. **Scientific notation is protected**
-
-   * Values like `1.2E-3` are intentionally **not modified**
-   * This prevents accidental corruption of numeric expressions
-
-4. **Only string-like cells are modified**
-
-   * Non-string cells are left unchanged
+- scientific notation (for example `1.5E-3`)
+- compound identifiers where one name is a prefix of another (for example `cyt_prot__EGF_1_` inside `cyt_prot__EGF_1__EGFR_1_`)
 
 ---
 
 ## Repository structure
 
-A typical layout might look like this:
-
 ```text
-project/
-├── species_name_converter.py
-├── config/
-│   └── swap_config.yaml
-├── data/
-│   ├── swap-reference.tsv
-│   └── SPARCED - Ratelaws.tsv
-├── file_loader.py
-└── utils.py
+SpeciesNameConverter/
+├── src/
+│   ├── species_name_converter.py   # CLI entry point
+│   ├── file_loader.py              # JSON/YAML/TSV/CSV/TXT loading
+│   ├── name_replacer.py            # Safe regex replacement engine
+│   ├── swap_report.py              # Optional verification + summary report
+│   └── utils.py
+├── Demo/
+│   ├── config.yaml                 # Example YAML configuration
+│   ├── config.json                 # Example JSON configuration
+│   ├── swap-reference.tsv          # Read-only swap table (old -> new)
+│   ├── SPARCEDv1-files/            # Read-only SPARCED v1 source files
+│   │   ├── Ratelaws.txt
+│   │   ├── Species.txt
+│   │   └── GeneReg.txt
+│   └── output/                     # Converted files written here
+└── README.md
 ```
 
 ---
 
 ## Requirements
 
-* Python 3.8+
-* `pandas`
-* `pyyaml` (if using YAML config files)
-
-Install common dependencies if needed:
+- Python 3.10+
+- `pandas`
+- `pyyaml` (required only for YAML config files)
 
 ```bash
 pip install pandas pyyaml
@@ -91,280 +71,184 @@ pip install pandas pyyaml
 
 ## Usage
 
-Run the script from the command line and provide a config file path.
+Run the entry script with a configuration file path. All input and output paths are defined in the config.
 
 ```bash
-python species_name_converter.py --path path/to/config.yaml
+python src/species_name_converter.py --path Demo/config.yaml
 ```
 
-### Short form
+Short form:
 
 ```bash
-python species_name_converter.py -p path/to/config.yaml
+python src/species_name_converter.py -p Demo/config.yaml
 ```
 
-### Verbose logging
+Verbose logging:
 
 ```bash
-python species_name_converter.py -p path/to/config.yaml --verbose
+python src/species_name_converter.py -p Demo/config.yaml --verbose
 ```
 
-or
+Optional loader arguments:
 
 ```bash
-python species_name_converter.py -p path/to/config.yaml -v
+python src/species_name_converter.py -p Demo/config.yaml -c sep='\t' header=None
 ```
 
-### Passing extra file-loading arguments
-
-The script supports optional catch-all keyword arguments that are passed through to your file 
-loader and writer.
-
-Example:
-
-```bash
-python species_name_converter.py -p path/to/config.yaml -c sep='\t' index=False
-```
-
-These are parsed as:
-
-```python
-{
-    "sep": "\t",
-    "index": False
-}
-```
+When the run completes, a summary report is printed to the terminal (see `src/report_template.txt` for the layout).
 
 ---
 
 ## Configuration file
 
-The script accepts either **YAML** or **JSON** configuration files.
+Configuration files may be **YAML** (`.yaml`, `.yml`) or **JSON** (`.json`).
 
-### YAML example
+### Recommended YAML layout
 
 ```yaml
-swap_files:
-  old:
-    filename: "swap-reference.tsv"
-    column: "old"
-    datatype: "string"
+# Directory for relative paths (defaults to the config file directory)
+base_dir: "."
 
-  new:
-    filename: "swap-reference.tsv"
-    column: "new"
-    datatype: "string"
+# Index-aligned swap table
+swap_reference:
+  file: "swap-reference.tsv"
+  old_column: "old"
+  new_column: "new"
 
-  update:
-    - file1:
-      filename: "SPARCED - Ratelaws.tsv"
-      output: "SPARCED-Ratelaws-updated.tsv"
+# Files to transform
+outputs:
+  - input: "sample-ratelaws.tsv"
+    output: "sample-ratelaws-updated.tsv"
+
+# Optional verification (disabled by default)
+verify:
+  enabled: false
+  standard_file: "standard-species.tsv"
+  standard_column: "speciesId"
+  detail_output: "discrepancies.tsv"
+
+# Optional pandas overrides
+load_kwargs:
+  sep: "\t"
+  dtype: str
+  keep_default_na: false
+
+save_kwargs:
+  sep: "\t"
+  index: false
 ```
 
-### JSON example
+### JSON equivalent
 
-```json
-{
-  "swap_files": {
-    "old": {
-      "filename": "swap-reference.tsv",
-      "column": "old",
-      "datatype": "string"
-    },
-    "new": {
-      "filename": "swap-reference.tsv",
-      "column": "new",
-      "datatype": "string"
-    },
-    "update": [
-      {
-        "file1": null,
-        "filename": "SPARCED - Ratelaws.tsv",
-        "output": "SPARCED-Ratelaws-updated.tsv"
-      }
-    ]
-  }
-}
-```
+See `Demo/config.json` for a full example.
 
 ---
 
 ## Config fields
 
-### `swap_files.old`
+| Field | Required | Description |
+| --- | --- | --- |
+| `base_dir` | No | Base directory for relative paths. Defaults to the config file directory. |
+| `swap_reference.file` | Yes | TSV/CSV file containing old and new columns. |
+| `swap_reference.old_column` | Yes | Column with strings to find. |
+| `swap_reference.new_column` | Yes | Column with replacement strings (row-aligned with `old_column`). |
+| `outputs` | Yes | List of `{input, output}` file pairs to transform. |
+| `outputs[].header` | No | Optional pandas `header` value for headerless files (`header: null`). |
+| `outputs[].format` | No | `table` (default) or `text`. Use `text` for variable-width files or matrix headers. |
+| `protected_paths` | No | Files or directories that outputs must not overwrite (see below). |
+| `verify.enabled` | No | When `true`, compare output identifiers against a reference list. Default: `false`. |
+| `verify.standard_file` | When verifying | Reference TSV/CSV with expected identifiers. |
+| `verify.standard_column` | When verifying | Column to read from the reference file. |
+| `verify.detail_output` | No | Optional TSV path for standard-only / target-only discrepancies. |
+| `load_kwargs` | No | Extra keyword arguments passed to `pandas.read_csv` when loading inputs. |
+| `save_kwargs` | No | Extra keyword arguments passed when writing outputs. |
 
-Defines the file and column containing the **original names** to search for.
+### Protected source files
+
+The converter always refuses to overwrite:
+
+- the swap reference file
+- any configured input file
+
+You can list additional read-only paths in `protected_paths`. The Demo config protects both `swap-reference.tsv` and the entire `SPARCEDv1-files/` directory, and writes converted results to `Demo/output/` instead.
 
 ```yaml
-old:
-  filename: "swap-reference.tsv"
-  column: "old"
+protected_paths:
+  - "swap-reference.tsv"
+  - "SPARCEDv1-files"
+
+outputs:
+  - input: "SPARCEDv1-files/Ratelaws.txt"
+    output: "output/Ratelaws-updated.txt"
 ```
 
-### `swap_files.new`
+### Legacy config format
 
-Defines the file and column containing the **replacement names**.
-
-```yaml
-new:
-  filename: "swap-reference.tsv"
-  column: "new"
-```
-
-### `swap_files.update`
-
-Defines one or more files to scan and rewrite.
-
-```yaml
-update:
-  - file1:
-    filename: "SPARCED - Ratelaws.tsv"
-    output: "SPARCED-Ratelaws-updated.tsv"
-```
-
-#### Meaning
-
-* `filename` = input file to modify
-* `output` = output file to write after replacements
+The previous `swap_files.old` / `swap_files.new` / `swap_files.update` layout is still supported for backward compatibility.
 
 ---
 
-## Input reference file example
+## Swap reference file
 
 Example `swap-reference.tsv`:
 
 ```tsv
 old	new
-ERK	MAPK1
-AKT	AKT1
-MEK	MAP2K1
+cyt_imp__Ribosome_	cyt_abs__ribosome_
+nuc_prot_i__TP53_	nuc_prot_i__P53_
 ```
+
+---
+
+## Replacement behavior
+
+Replacements use a compiled regex engine with token boundaries designed for underscore-heavy identifiers:
+
+- Longer identifiers are matched before shorter ones.
+- Identifiers ending in `_` are not replaced when followed by another `_` (compound names).
+- Scientific notation is temporarily masked before replacement.
+
+Example: replacing `cyt_prot__EGF_1_` does **not** modify `cyt_prot__EGF_1__EGFR_1_`, but does replace standalone occurrences such as `exc_prot__EGF_1_ + cyt_prot__EGFR_1_`.
+
+---
+
+## Summary report
+
+After processing, the tool prints a report like:
+
+```text
++--------------------------------------------------+
+| String Harmonization Summary                     |
++--------------------------------------------------+
+| Mapping entries loaded       : 601               |
+| Target entries processed     : 16                |
+| Entries renamed              : 3 (18.8%)         |
+| Entries unchanged            : 13                |
+| Failed / unmapped renames    : 0                 |
+| Naming collisions detected   : 8                 |
+| Detail files                 : none              |
++--------------------------------------------------+
+```
+
+When `verify.enabled` is `true`, additional overlap statistics and an optional discrepancies file are included.
+
+---
+
+## CLI reference
+
+| Option | Description |
+| --- | --- |
+| `--path`, `-p` | Path to YAML or JSON config file (required) |
+| `--catchall`, `-c` | Optional `key=value` pairs forwarded to tabular loading |
+| `--verbose`, `-v` | Enable debug logging |
 
 ---
 
 ## Example run
 
-### Files
-
-#### `swap-reference.tsv`
-
-```tsv
-old	new
-ERK	MAPK1
-AKT	AKT1
-MEK	MAP2K1
-```
-
-#### `SPARCED - Ratelaws.tsv`
-
-```tsv
-rule
-ERK + AKT -> MEK
-MEK = ERK * 2
-```
-
-### Command
-
 ```bash
-python species_name_converter.py -p config/swap_config.yaml -c sep='\t' index=False
+cd SpeciesNameConverter
+python src/species_name_converter.py -p Demo/config.yaml
 ```
 
-### Output
-
-#### `SPARCED-Ratelaws-updated.tsv`
-
-```tsv
-rule
-MAPK1 + AKT1 -> MAP2K1
-MAP2K1 = MAPK1 * 2
-```
-
----
-
-## Notes on replacement behavior
-
-The script uses regex-based replacement with some boundary protection.
-
-### Good behavior
-
-It is designed to avoid replacing names inside larger tokens when possible.
-
-For example, replacing `AKT` should not unintentionally replace part of an unrelated longer identifier like:
-
-```text
-AKT_complex
-```
-
-depending on the exact boundary context.
-
-### Scientific notation is preserved
-
-This expression:
-
-```text
-k = 1.5E-3 * ERK
-```
-
-becomes:
-
-```text
-k = 1.5E-3 * MAPK1
-```
-
-and **not**:
-
-```text
-k = 1.5MAPK1-3 * MAPK1
-```
-
----
-
-## Logging
-
-The script logs progress as it runs.
-
-Default logging includes:
-
-* config loading
-* mapping creation
-* file processing
-* output writing
-
-Use `--verbose` for debug-level logging:
-
-```bash
-python species_name_converter.py -p config/swap_config.yaml --verbose
-```
-
----
-
-## Known limitations
-
-* The script assumes the mapping file is correct and aligned.
-* There is currently **no built-in validation** that:
-
-  * `old` and `new` columns are the same length
-  * all referenced files exist
-  * all configured columns exist
-* Replacement order may matter if one identifier is a substring of another.
-* The current `update` config structure is slightly awkward and could be simplified later.
-
----
-
-## Script entry point
-
-Main script:
-
-```bash
-species_name_converter.py
-```
-
-CLI options:
-
-```text
---path, -p       Path to YAML/JSON config file
---catchall, -c   Optional key=value arguments passed through to loader/writer
---verbose, -v    Enable debug logging
-```
-
----
+This reads the SPARCED v1 source files and swap table from `Demo/`, leaves those source files unchanged, and writes updated copies to `Demo/output/`.
